@@ -1,4 +1,3 @@
-
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
 
@@ -22,19 +21,30 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
-
-export async function POST(request) {
-    try {
-        const { values } = req.body;
-        const response = await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: `${sheetName}!A1:AJ1000`,
-          range : `${sheetName}!A1:A1000`,
-          valueInputOption: 'RAW',
-          resource: { values },
-        });
-        res.status(201).send(response.data);
-      } catch (error) {
-        res.status(500).send(error.message);
-      }
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Only POST requests are allowed' });
   }
+
+  try {
+    const { values } = req.body;
+    const spreadsheetId = process.env.SPREADSHEET_ID;
+    const sheetName = process.env.SHEET_NAME;
+
+    if (!values || !Array.isArray(values)) {
+      return res.status(400).json({ message: 'Invalid request data' });
+    }
+
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetName}!A1:A1000`, // Specify your desired range here
+      valueInputOption: 'RAW',
+      resource: { values },
+    });
+
+    res.status(201).json(response.data);
+  } catch (error) {
+    console.error("Error appending data to Google Sheets:", error);
+    res.status(500).json({ message: error.message });
+  }
+}
