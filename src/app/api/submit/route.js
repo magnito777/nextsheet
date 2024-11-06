@@ -25,23 +25,16 @@ const sheets = google.sheets({ version: 'v4', auth });
 
 export async function POST(request) {
     try {
-      const { values } = await request.json();
-      if (!values || !Array.isArray(values)) {
-        return new Response("Invalid request data", { status: 400 });
+        const { values } = req.body;
+        const response = await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${sheetName}!A1:AJ1000`,
+          range : `${sheetName}!A1:A1000`,
+          valueInputOption: 'RAW',
+          resource: { values },
+        });
+        res.status(201).send(response.data);
+      } catch (error) {
+        res.status(500).send(error.message);
       }
-  
-      const response = await sheets.spreadsheets.values.append({
-        spreadsheetId: process.env.SPREADSHEET_ID,
-        range: `${process.env.SHEET_NAME}!A1`, // Adjust this range as needed
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [values],
-        },
-      });
-  
-      return new Response(JSON.stringify(response.data), { status: 200 });
-    } catch (error) {
-      console.error("Error appending data to Google Sheets:", error);
-      return new Response("Error appending data to Google Sheets", { status: 500 });
-    }
   }
