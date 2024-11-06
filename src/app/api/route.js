@@ -35,33 +35,27 @@ export async function GET() {
   }
 }
 
+//post request method
 
-
-
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-      return res.status(405).send({ message: 'Only POST requests are allowed' });
-    }
-  
+export async function POST(request) {
     try {
-      const { values } = req.body;
-      const spreadsheetId = process.env.SPREADSHEET_ID;
-      const sheetName = process.env.SHEET_NAME;
-  
+      const { values } = await request.json();
       if (!values || !Array.isArray(values)) {
-        return res.status(400).send({ message: 'Invalid request data' });
+        return new Response("Invalid request data", { status: 400 });
       }
   
       const response = await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: `${sheetName}!A1:A1000`,
-        valueInputOption: 'RAW',
-        resource: { values },
+        spreadsheetId: process.env.SPREADSHEET_ID,
+        range: `${process.env.SHEET_NAME}!A1`, // Adjust this range as needed
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [values],
+        },
       });
   
-      res.status(201).send(response.data);
+      return new Response(JSON.stringify(response.data), { status: 200 });
     } catch (error) {
       console.error("Error appending data to Google Sheets:", error);
-      res.status(500).send({ message: error.message });
+      return new Response("Error appending data to Google Sheets", { status: 500 });
     }
   }
