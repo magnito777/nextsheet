@@ -38,52 +38,30 @@ export async function GET() {
 
 
 
-export async function POST(req) {
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+      return res.status(405).send({ message: 'Only POST requests are allowed' });
+    }
+  
     try {
-      const body = await req.json();
-      
-      // Map request body fields to Google Sheets values array
-      const values = [
-        [
-          body.patientnumber, 
-          body["study-number"], 
-          body.xraynumber, 
-          body.age, 
-          body.sex, 
-          body.residence, 
-          body.occupation, 
-          body.education_level, 
-          body.district, 
-          body.village, 
-          body.road, 
-          body.crash_date, 
-          body.crash_day, 
-          body.crash_time, 
-          body.referral, 
-          body.referring_hospital, 
-          body.evacuation_mode, 
-          body.has_fracture, 
-          body.fracture_type, 
-          body.fracture_nature, 
-          body.fractured_bone, 
-          body.gustilo_classification, 
-          body.head_injury_gcs, 
-          body.iss_score, 
-          body.diagnosis,
-        ]
-      ];
-      
-      // Append data to Google Sheets
+      const { values } = req.body;
+      const spreadsheetId = process.env.SPREADSHEET_ID;
+      const sheetName = process.env.SHEET_NAME;
+  
+      if (!values || !Array.isArray(values)) {
+        return res.status(400).send({ message: 'Invalid request data' });
+      }
+  
       const response = await sheets.spreadsheets.values.append({
-        spreadsheetId: process.env.SPREADSHEET_ID,
-        range: `${process.env.SHEET_NAME}!A1:AJ1000`,
+        spreadsheetId,
+        range: `${sheetName}!A1:A1000`,
         valueInputOption: 'RAW',
         resource: { values },
       });
   
-      return new Response(JSON.stringify(response.data), { status: 201 });
+      res.status(201).send(response.data);
     } catch (error) {
       console.error("Error appending data to Google Sheets:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      res.status(500).send({ message: error.message });
     }
   }
